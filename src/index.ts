@@ -4,8 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirExists, listFlows, getAllFlowData } from "./utils/files.js";
 import { newFlow } from "./commands/new-flow.js";
+import { initFlow } from "./commands/init.js";
 import { parseFlow } from "./compiler/parser.js";
 import { compileOverview, compileDesignSpec, compileCompact, toJSON } from "./compiler/compile.js";
+import { loadConfig } from "./config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,6 +19,8 @@ function version(): string {
 
 function findDomain(cwd: string, domain?: string): string | null {
   if (domain) return domain;
+  const cfg = loadConfig(cwd);
+  if (cfg.domain) return cfg.domain;
   const dd = path.join(cwd, "domains");
   if (!dirExists(dd)) return null;
   const dirs = readdirSync(dd).filter((d) => dirExists(path.join(dd, d)));
@@ -27,6 +31,13 @@ function findDomain(cwd: string, domain?: string): string | null {
 const program = new Command();
 
 program.name("flow").version(version()).description("FlowSpec: Product-driven development");
+
+program
+  .command("init")
+  .description("Initialize FlowSpec in this project")
+  .action(async () => {
+    await initFlow(process.cwd());
+  });
 
 program
   .command("new")
